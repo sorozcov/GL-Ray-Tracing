@@ -20,7 +20,7 @@ smile = Material(diffuse = colorScale(65/255, 65/255, 65/255 ),specularity=16)
 #Create our raytracer and spheres to build a snowman
 raytracerGl=Raytracer(int(800/1),int(500/1))
 raytracerGl.FOV = 120
-raytracerGl.pointLight= PointLight(position=(-0.3,0.3,0),intensity=1.5)
+raytracerGl.pointLight= PointLight(position=(-1,1,0),intensity=1.5)
 raytracerGl.ambientLight= AmbientLight(strength=0.1)
 raytracerGl.sceneObjects.append( Sphere((0, 6, -11), 4, snow) )
 raytracerGl.sceneObjects.append( Sphere((0, 0, -10), 4, snow) )
