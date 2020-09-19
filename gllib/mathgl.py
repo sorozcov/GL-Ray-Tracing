@@ -37,6 +37,15 @@ class MathGl(object):
             vectorResult[i]=vectorA[i]-vectorB[i]
         return vectorResult
     
+    #Function to sum two vectors
+    def sumVector(self,vectorA,vectorB):
+        if(len(vectorA)!=len(vectorB)):
+            return
+        vectorResult=[None] * len(vectorA)
+        for i in range(len(vectorA)):
+            vectorResult[i]=vectorA[i]+vectorB[i]
+        return vectorResult
+
     #Function to do product cross two vectors
     def crossVector(self,vectorA,vectorB):
         if(len(vectorA)!=len(vectorB)):

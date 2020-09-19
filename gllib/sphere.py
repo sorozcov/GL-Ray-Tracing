@@ -12,8 +12,12 @@ from gllib.mathgl import MathGl
 
 #Intersect class to define the distance of intersection
 class Intersect(object):
-    def __init__(self, intersectDistance):
+    def __init__(self, intersectDistance,point,normal,sceneObject=None):
+
         self.distance = intersectDistance
+        self.point = point
+        self.normal = normal
+        self.sceneObject = sceneObject
 
 
 #Class Sphere to render a sphere object
@@ -63,5 +67,10 @@ class Sphere(object):
         if t0 < 0:
             return None
             
+        # We get the point value
+        # P=O+tD
+        point=self.mathGl.sumVector(origin,self.mathGl.scalarMultiplicationVector(direction,t0))
+        normal=self.mathGl.subtractVector(point,self.center)
+        normal=self.mathGl.normalizeVector(normal)
         #Any other way there is an intersection with distance t0
-        return Intersect(intersectDistance = t0)
+        return Intersect(intersectDistance = t0,point=point,normal=normal,sceneObject=self)
