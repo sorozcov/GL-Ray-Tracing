@@ -12,6 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 #We import our object class to gl.py
 from gllib.obj import Obj,Texture
 from gllib.mathgl import MathGl
+from gllib.material import OPAQUE,TRANSPARENT,REFLECTIVE
 from math import pi,cos,sin,tan
 
 
@@ -40,6 +41,7 @@ def color(r,g,b):
 def colorScale(r,g,b):
     return bytes([round(b*255),round(g*255),round(r*255)])
 
+maxRecursionDepth = 3 
 #class Raytracer
 class Raytracer(object):
     #Inititalize function glInit
@@ -352,81 +354,116 @@ class Raytracer(object):
                 #Camara Direction
                 direction = [pX, pY, -1]
                 direction = self.mathGl.normalizeVector(direction)
-
-                material = None
-
-                #We check for each object in our scene
-                for obj in self.sceneObjects:
-                    #We check for intersection with ray and zBuffer to take in account depth
-                    intersect = obj.ray_intersect(self.camPosition, direction)
-                    if intersect is not None:
-                        if intersect.distance < self.zbuffer[y][x]:
-                            self.zbuffer[y][x] = intersect.distance
-                            material = obj.material
-                            self.glVertexColorAbsolute(x, y, color=self.pointColor(material,intersect))
-        
+                
+                colorRay = self.castRay(self.camPosition,direction)
+                if colorRay is not None:
+                    self.glVertexColorAbsolute(x, y, color=colorRay)
     
-    def pointColor(self,material,intersect):
-        objectColor = [material.diffuse[2] / 255,
-                    material.diffuse[1] / 255,
-                    material.diffuse[0] / 255]
-        ambientColor = [0,0,0]
-        diffuseColor = [0,0,0]
-        specColor = [0,0,0]
-        shadowIntensity = 0
+    # Check if there is obj intersect with another
+    def sceneIntersect(self,orig,direction,origObj=None):
+        material = None
+        intersect =None
+        hit=None
+        tempZBuffer = float('inf')
+        #We check for each object in our scene
+        for obj in self.sceneObjects:
+            if obj is not origObj:
+                #We check for intersection with ray and zBuffer to take in account depth
+                intersect = obj.ray_intersect(orig, direction)
+                if intersect is not None:
+                    if intersect.distance < tempZBuffer:
+                        tempZBuffer = intersect.distance
+                        material = obj.material
+                        hit =intersect
+        
+        return material,hit        
+        
+    def reflectVector(self,normal,dirVector):
+        # reflectLigthDirection = 2 * (normal dot lightDirection) * normal - lightDirection
+        reflectLigthDirection = 2 * self.mathGl.dotProductVector(normal, dirVector)
+        reflectLigthDirection = self.mathGl.scalarMultiplicationVector(normal,reflectLigthDirection)
+        reflectLigthDirection = self.mathGl.subtractVector(reflectLigthDirection, dirVector)
+        return reflectLigthDirection
+
+    #To point a color with material and ray intersect
+    def castRay(self,orig,direction,origObj=None,recursion=0):
+        material,intersect=self.sceneIntersect(orig,direction,origObj)
+        if recursion>=maxRecursionDepth or material is None:
+            return self.backgroundColor   
+        if material is not None:
+            objectColor = [material.diffuse[2] / 255,
+                        material.diffuse[1] / 255,
+                        material.diffuse[0] / 255]
+            ambientColor = [0,0,0]
+            diffuseColor = [0,0,0]
+            specColor = [0,0,0]
+            shadowIntensity = 0
 
 
-        #Get ambienteColor from light
-        if self.ambientLight:
-            ambientColor =  [self.ambientLight.strength * self.ambientLight.color[2] / 255,
-                            self.ambientLight.strength * self.ambientLight.color[1] / 255,
-                            self.ambientLight.strength * self.ambientLight.color[0] / 255]
+            #Get ambienteColor from light
+            if self.ambientLight:
+                ambientColor =  [self.ambientLight.strength * self.ambientLight.color[2] / 255,
+                                self.ambientLight.strength * self.ambientLight.color[1] / 255,
+                                self.ambientLight.strength * self.ambientLight.color[0] / 255]
 
-        #Get colors from pointLight
-        if self.pointLight:
-            # Get light direction of pointLight to calculate intensity
-            lightDirection = self.mathGl.subtractVector(self.pointLight.position,intersect.point)
-            lightDirection = self.mathGl.normalizeVector(lightDirection)
-            intensity = self.mathGl.dotProductVector(lightDirection,intersect.normal)
-            intensity = self.pointLight.intensity * max(0,intensity)
-            # Calculate actual color of object with light
-            diffuseColor = [intensity * self.pointLight.color[2] / 255,
-                        intensity * self.pointLight.color[1] / 255,
-                        intensity * self.pointLight.color[2] / 255]
+            #Get colors from pointLight
+            if self.pointLight:
+                # Get light direction of pointLight to calculate intensity
+                lightDirection = self.mathGl.subtractVector(self.pointLight.position,intersect.point)
+                lightDirection = self.mathGl.normalizeVector(lightDirection)
+                intensity = self.mathGl.dotProductVector(lightDirection,intersect.normal)
+                intensity = self.pointLight.intensity * max(0,intensity)
+                # Calculate actual color of object with light
+                diffuseColor = [intensity * self.pointLight.color[2] / 255,
+                            intensity * self.pointLight.color[1] / 255,
+                            intensity * self.pointLight.color[2] / 255]
+                
+                # Use specularity
+                # We need view direction and light direction of reflection
+                viewDirection = self.mathGl.subtractVector(self.camPosition,intersect.point)
+                viewDirection = self.mathGl.normalizeVector(viewDirection)
+                reflectLigthDirection = self.reflectVector(intersect.normal,lightDirection)
+                # spec_intensity: lightIntensity * ( viewDirection dot reflectLigthDirection) ** speculatiry
+                specFactor=(max(0, self.mathGl.dotProductVector(viewDirection, reflectLigthDirection)) ** material.specularity)
+                specIntensity = self.pointLight.intensity * specFactor
+                specColor = [specIntensity * self.pointLight.color[2] / 255,
+                        specIntensity * self.pointLight.color[1] / 255,
+                        specIntensity * self.pointLight.color[0] / 255]
+
+                #We check each object in our scene for all shadows
+                for obj in self.sceneObjects:
+                    if obj is not intersect.sceneObject:
+                        hit = obj.ray_intersect(intersect.point,  lightDirection)
+                        if hit is not None and intersect.distance < self.mathGl.magnitudeVector(self.mathGl.subtractVector(self.pointLight.position, intersect.point)):
+                            shadowIntensity = 1
             
-            # Use specularity
-            # We need view direction and light direction of reflection
-            viewDirection = self.mathGl.subtractVector(self.camPosition,intersect.point)
-            viewDirection = self.mathGl.normalizeVector(viewDirection)
-            # reflectLigthDirection = 2 * (normal dot lightDirection) * normal - lightDirection
-            reflectLigthDirection = 2 * self.mathGl.dotProductVector(intersect.normal, lightDirection)
-            reflectLigthDirection = self.mathGl.scalarMultiplicationVector(intersect.normal,reflectLigthDirection)
-            reflectLigthDirection = self.mathGl.subtractVector(reflectLigthDirection, lightDirection)
-            # spec_intensity: lightIntensity * ( viewDirection dot reflectLigthDirection) ** speculatiry
-            specFactor=(max(0, self.mathGl.dotProductVector(viewDirection, reflectLigthDirection)) ** material.specularity)
-            specIntensity = self.pointLight.intensity * specFactor
-            specColor = [specIntensity * self.pointLight.color[2] / 255,
-                    specIntensity * self.pointLight.color[1] / 255,
-                    specIntensity * self.pointLight.color[0] / 255]
+            finalColor = None
+            #If Material is OPAQUE
+            if material.matType==OPAQUE:
+                # Calculate final color 
+                # (ambientColor + (1 - shadowIntensity) *(specColor + diffuseColor)) * objectColor     
+                finalColor = self.mathGl.sumVector(diffuseColor,specColor)
+                finalColor = self.mathGl.scalarMultiplicationVector(finalColor,(1-shadowIntensity))
+                finalColor =self.mathGl.sumVector(finalColor,ambientColor)
+            #If Material is REFLECTIVE
+            elif material.matType==REFLECTIVE:
+                reflect = self.reflectVector(intersect.normal,viewDirection)
+                reflectColor = self.castRay(intersect.point,reflect,intersect.sceneObject,recursion+1)
+                reflectColor=[reflectColor[2] / 255,
+                        reflectColor[1] / 255,
+                        reflectColor[0] / 255]
+                finalColor = self.mathGl.scalarMultiplicationVector(specColor,(1-shadowIntensity))
+                finalColor =self.mathGl.sumVector(reflectColor,finalColor)
+            elif material.matType==TRANSPARENT:
+                print("TRANSPARENT")
 
-            #We check each object in our scene for all shadows
-            for obj in self.sceneObjects:
-                if obj is not intersect.sceneObject:
-                    hit = obj.ray_intersect(intersect.point,  lightDirection)
-                    if hit is not None and intersect.distance < self.mathGl.magnitudeVector(self.mathGl.subtractVector(self.pointLight.position, intersect.point)):
-                        shadowIntensity = 1
+            finalColor=self.mathGl.multiplyVector(finalColor,objectColor)
+            r=min(1,finalColor[0])
+            g=min(1,finalColor[1])
+            b=min(1,finalColor[2])
 
-        # Calculate final color 
-        # (ambientColor + (1 - shadowIntensity) *(specColor + diffuseColor)) * objectColor     
-        finalColor = self.mathGl.sumVector(diffuseColor,specColor)
-        finalColor = self.mathGl.scalarMultiplicationVector(finalColor,(1-shadowIntensity))
-        finalColor =self.mathGl.sumVector(finalColor,ambientColor)
-        finalColor=self.mathGl.multiplyVector(finalColor,objectColor)
-        r=min(1,finalColor[0])
-        g=min(1,finalColor[1])
-        b=min(1,finalColor[2])
-
-        return colorScale(r,g,b)
+            return colorScale(r,g,b)
+        return None
 
     
                     
