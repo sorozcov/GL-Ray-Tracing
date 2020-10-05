@@ -33,9 +33,8 @@ raytracerGl.ambientLight= AmbientLight(strength=0.1)
 
 
 #Planes
-# raytracerGl.sceneObjects.append( Plane(position=(0,-10,0),normal=(0,1,0),material=color1))
-raytracerGl.sceneObjects.append( Plane(position=(0,0,-10),normal=(0,0,1),material=color2))
-raytracerGl.sceneObjects.append( Plane(position=(0,-5,-5),normal=(1,0,0),material=color2))
+raytracerGl.sceneObjects.append( Plane(position=(0,-3,0),normal=(0,1,0),material=color1))
+raytracerGl.sceneObjects.append( Plane(position=(0,0,-10),normal=(0,0,1),material=color3))
 
 # AAABox
 # raytracerGl.sceneObjects.append( AABBox(position=(1.5,-1.5,-5),size=1.5,material=color3))

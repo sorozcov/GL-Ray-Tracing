@@ -389,7 +389,9 @@ class Raytracer(object):
     def castRay(self,orig,direction,origObj=None,recursion=0):
         material,intersect=self.sceneIntersect(orig,direction,origObj)
         if recursion>=maxRecursionDepth or material is None:
+            
             return self.backgroundColor   
+        
         if material is not None:
             objectColor = [material.diffuse[2] / 255,
                         material.diffuse[1] / 255,
@@ -431,11 +433,9 @@ class Raytracer(object):
                         specIntensity * self.pointLight.color[0] / 255]
 
                 #We check each object in our scene for all shadows
-                for obj in self.sceneObjects:
-                    if obj is not intersect.sceneObject:
-                        hit = obj.ray_intersect(intersect.point,  lightDirection)
-                        if hit is not None and intersect.distance < self.mathGl.magnitudeVector(self.mathGl.subtractVector(self.pointLight.position, intersect.point)):
-                            shadowIntensity = 1
+                shadMat, shadowIntersect = self.sceneIntersect(intersect.point,  lightDirection, intersect.sceneObject)
+                if shadowIntersect is not None and shadowIntersect.distance < self.mathGl.magnitudeVector(self.mathGl.subtractVector(self.pointLight.position, intersect.point)):
+                    shadowIntensity = 1
             
             finalColor = None
             #If Material is OPAQUE
