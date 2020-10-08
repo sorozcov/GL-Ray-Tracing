@@ -5,7 +5,10 @@
 # Guatemala 04/09/2020
 #  material.py
 
-
+# Material Types
+OPAQUE = 0
+REFLECTIVE = 1
+TRANSPARENT =2
 # Color function ro return rgb in bytes
 def colorScale(r,g,b):
     return bytes([round(b*255),round(g*255),round(r*255)])
@@ -13,10 +16,11 @@ def colorScale(r,g,b):
 # Material with a set of properties for the object and it's interaction with light
 class Material(object):
 
-    def __init__(self, diffuse = colorScale(1,1,1),specularity=0):
+    def __init__(self, diffuse = colorScale(1,1,1),specularity=0,matType=OPAQUE):
         # Diffuse Material Color
         self.diffuse = diffuse
         # Specularity to know how reflective a surface is
         # It depends from the point of view
         self.specularity = specularity
+        self.matType = matType
         
