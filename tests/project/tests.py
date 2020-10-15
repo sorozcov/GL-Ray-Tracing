@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Laboratorio 3 Tests.py
+# Project Ray Tracing
 
 #Import our gl library
 import math
@@ -9,54 +9,50 @@ from gllib.gl import Raytracer,colorScale
 from gllib.material import Material,REFLECTIVE
 from gllib.sphere import Sphere 
 from gllib.plane import Plane
+from gllib.disc import Disc
+from gllib.cone import Cone
 from gllib.aabbox import AABBox 
-from gllib.obj import Texture
+from gllib.obj import Texture,Envmap
 from gllib.light import PointLight,AmbientLight
 
 
 #Material to use
 
-# color1 = Material(diffuse = colorScale(116/255, 47/255, 0),specularity=16)
-# color2 = Material(diffuse = colorScale(255/255, 156/255, 87/255),specularity=32)
-# color3 = Material(diffuse = colorScale(0.2,0.6,0.8),specularity=32)
-color4 = Material(diffuse = colorScale(1, 1, 1),specularity=16)
+
 colorRed = Material(diffuse = colorScale(1, 0, 0),specularity=16)
 colorBlack = Material(diffuse = colorScale(34/255, 24/255, 12/255),specularity=16)
 colorBrown = Material(diffuse = colorScale(106/255, 59/255, 0/255),specularity=16)
 colorYellow = Material(diffuse = colorScale(255/255, 255/255, 66/255),specularity=16)
+blood = Material(diffuse = colorScale(175/255, 4/255, 4/255 ),specularity=120)
 colorGray = Material(diffuse = colorScale(163/255, 179/255, 209/255 ),specularity=1024)
+colorGray2 = Material(diffuse = colorScale(163/255, 179/255, 209/255 ),specularity=2048)
 colorWhite = Material(diffuse = colorScale(255/255, 255/255, 255/255 ),specularity=1024)
+mirror = Material(diffuse = colorScale(0.8, 0.8, 0.8),specularity=1024,matType=REFLECTIVE)
+sunMat = Material(texture = Texture('./tests/project/sun.bmp'))
 
-# color6 = Material(diffuse = colorScale(0, 1, 0),specularity=16)
 
 #Create our raytracer and spheres to build a snowman
-raytracerGl=Raytracer(int(512/4),int(512/4))
+raytracerGl=Raytracer(int(512),int(512))
 raytracerGl.pointLight= PointLight(position=(0,0,0),intensity=1)
 raytracerGl.ambientLight= AmbientLight(strength=0.2)
-raytracerGl.glClearColorScaleRGB(0.2,0.6,0.8)
-# Spheres
-# raytracerGl.sceneObjects.append( Sphere((1, 1, -8), 1.5, color1))
-
-# raytracerGl.sceneObjects.append( Sphere((-3, 3, -10), 2, mirror))
-# raytracerGl.sceneObjects.append( Sphere((-3, -3, -10), 1, mirror))
-# raytracerGl.sceneObjects.append( Sphere((0, 0, -5), 0.5, colorGray))
+raytracerGl.envmap = Envmap('./tests/project/night.bmp')
 
 
+# Spheres Sun
+raytracerGl.sceneObjects.append( Sphere((-10, 13, -30), 2, sunMat))
 
 
-#Planes
-#Below
-# raytracerGl.sceneObjects.append( Plane(position=(0,-3,0),normal=(0,1,0),material=color4))
-# #Back
-# raytracerGl.sceneObjects.append( Plane(position=(0,0,-10),normal=(0,0,1),material=color4))
-# #Left
-# raytracerGl.sceneObjects.append( Plane(position=(-3,0,0),normal=(1,0,0),material=color4))
-# #Right
-# raytracerGl.sceneObjects.append( Plane(position=(3,0,0),normal=(1,0,0),material=color4))
-# #Top
-# raytracerGl.sceneObjects.append( Plane(position=(0,3,0),normal=(0,1,0),material=color4))
+# Reflection Espejo
+raytracerGl.sceneObjects.append( AABBox(position=(0.5,0,-15),size=4.4,material=mirror))
+#Blood
+raytracerGl.sceneObjects.append( Disc(center=(0,-1.6,-5.1),normal=(0,1,0),radius=1.2,material=colorRed))
 
-# AAABox
+
+# #Planes
+# #Floor
+raytracerGl.sceneObjects.append( Plane(position=(0,-8,0),normal=(0,1,0),material=colorGray))
+
+
 #Among us RED
 #Legs
 raytracerGl.sceneObjects.append( AABBox(position=(1+0.6,-1.3,-5),size=0.3,material=colorRed))
@@ -78,7 +74,7 @@ raytracerGl.sceneObjects.append( AABBox(position=(1+0,-0.1,-5),size=0.3,material
 raytracerGl.sceneObjects.append( AABBox(position=(1+0.5,0.2,-5),size=0.4,material=colorRed))
 raytracerGl.sceneObjects.append( AABBox(position=(1+0.1,0.2,-5),size=0.4,material=colorRed))
 #Eyes
-raytracerGl.sceneObjects.append( AABBox(position=(1+0.05,0,-5),size=0.5,material=colorGray))
+raytracerGl.sceneObjects.append( AABBox(position=(1+0.05,0,-5),size=0.5,material=colorGray2))
 
 #Backpack
 raytracerGl.sceneObjects.append( AABBox(position=(1+0.95,-0.2,-5.0),size=0.2,material=colorRed))
@@ -95,7 +91,7 @@ raytracerGl.sceneObjects.append( AABBox(position=(0.8+0.3,0.65,-4.8),size=0.3,ma
 raytracerGl.sceneObjects.append( AABBox(position=(0.8+0.6,0.65,-4.8),size=0.3,material=colorBlack))
 
 #Among us YELLOW
-#Legs
+# Legs
 raytracerGl.sceneObjects.append( AABBox(position=(-1-0.6,-1.3,-5),size=0.3,material=colorYellow))
 raytracerGl.sceneObjects.append( AABBox(position=(-1-0,-1.3,-5),size=0.3,material=colorYellow))
 #Body
@@ -120,17 +116,17 @@ raytracerGl.sceneObjects.append( AABBox(position=(-1-0.35,0.5,-5),size=0.1,mater
 raytracerGl.sceneObjects.append( AABBox(position=(-1-0.35,0.6,-5),size=0.1,material=colorBlack))
 raytracerGl.sceneObjects.append( AABBox(position=(-1-0.35,0.7,-5),size=0.1,material=colorBlack))
 raytracerGl.sceneObjects.append( Sphere((-1-0.35, 0.85, -5), 0.3, colorYellow))
-# #Eyes
-raytracerGl.sceneObjects.append( AABBox(position=(-1-0.05,0,-5),size=0.5,material=colorGray))
+#Eyes
+raytracerGl.sceneObjects.append( AABBox(position=(-1-0.05,0,-5),size=0.5,material=colorGray2))
 
-# #Backpack
+#Backpack
 raytracerGl.sceneObjects.append( AABBox(position=(-1-0.95,-0.2,-5.0),size=0.2,material=colorYellow))
 raytracerGl.sceneObjects.append( AABBox(position=(-1-0.95,-0.4,-5.0),size=0.2,material=colorYellow))
 raytracerGl.sceneObjects.append( AABBox(position=(-1-0.95,-0.6,-5.0),size=0.2,material=colorYellow))
 raytracerGl.sceneObjects.append( AABBox(position=(-1-0.95,-0.8,-5.0),size=0.2,material=colorYellow))
 
 
-#Among us BLACK dead
+# #Among us BLACK dead
 #Legs
 raytracerGl.sceneObjects.append( AABBox(position=(-0-0.6,-1.6,-5),size=0.3,material=colorBlack))
 raytracerGl.sceneObjects.append( AABBox(position=(-0-0,-1.6,-5),size=0.3,material=colorBlack))
@@ -151,8 +147,7 @@ raytracerGl.sceneObjects.append( Sphere((-0-0.45, -0.3, -5), 0.2, colorWhite))
 
 
 raytracerGl.rtRender()
-
-raytracerGl.glFinish('./tests/project/test.bmp')
+raytracerGl.glFinish('./tests/project/projectSceneFinal.bmp')
 
 
 

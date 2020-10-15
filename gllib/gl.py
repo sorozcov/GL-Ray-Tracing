@@ -60,6 +60,9 @@ class Raytracer(object):
         self.sceneObjects = []
         self.pointLight=None
         self.ambientLight = None
+        self.envmap = None
+        self.dirLight = None
+        self.pointLights=[]
     
     #Size of image result
     def glCreateWindow(self,width,height):
@@ -389,7 +392,8 @@ class Raytracer(object):
     def castRay(self,orig,direction,origObj=None,recursion=0):
         material,intersect=self.sceneIntersect(orig,direction,origObj)
         if recursion>=maxRecursionDepth or material is None:
-            
+            if self.envmap:
+                return self.envmap.getColor(direction)
             return self.backgroundColor   
         
         if material is not None:
@@ -445,6 +449,12 @@ class Raytracer(object):
                 finalColor = self.mathGl.sumVector(diffuseColor,specColor)
                 finalColor = self.mathGl.scalarMultiplicationVector(finalColor,(1-shadowIntensity))
                 finalColor =self.mathGl.sumVector(finalColor,ambientColor)
+                if material.texture and intersect.texCoords:
+                    texColor = material.texture.getColor(intersect.texCoords[0], intersect.texCoords[1])
+                    texColor = [texColor[2] / 255,
+                                            texColor[1] / 255,
+                                            texColor[0] / 255]
+                    finalColor=self.mathGl.multiplyVector(finalColor,texColor)
             #If Material is REFLECTIVE
             elif material.matType==REFLECTIVE:
                 reflect = self.reflectVector(intersect.normal,viewDirection)
@@ -461,8 +471,10 @@ class Raytracer(object):
             r=min(1,finalColor[0])
             g=min(1,finalColor[1])
             b=min(1,finalColor[2])
-
-            return colorScale(r,g,b)
+            try:
+                return colorScale(r,g,b)
+            except:
+                return None
         return None
 
     

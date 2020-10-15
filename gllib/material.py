@@ -16,11 +16,12 @@ def colorScale(r,g,b):
 # Material with a set of properties for the object and it's interaction with light
 class Material(object):
 
-    def __init__(self, diffuse = colorScale(1,1,1),specularity=0,matType=OPAQUE):
+    def __init__(self, diffuse = colorScale(1,1,1),specularity=0,matType=OPAQUE,texture=None):
         # Diffuse Material Color
         self.diffuse = diffuse
         # Specularity to know how reflective a surface is
         # It depends from the point of view
         self.specularity = specularity
         self.matType = matType
+        self.texture = texture
         

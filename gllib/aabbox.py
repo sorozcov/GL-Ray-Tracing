@@ -13,12 +13,13 @@ from gllib.plane import Plane
 
 #Intersect class to define the distance of intersection
 class Intersect(object):
-    def __init__(self, intersectDistance,point,normal,sceneObject=None):
+    def __init__(self, intersectDistance,point,normal,sceneObject=None,texCoords=None):
 
         self.distance = intersectDistance
         self.point = point
         self.normal = normal
         self.sceneObject = sceneObject
+        self.texCoords=texCoords
 
 
 #Class AABBox to render a AABBox object

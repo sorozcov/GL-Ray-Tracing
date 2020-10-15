@@ -9,15 +9,18 @@
 import os,sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from gllib.mathgl import MathGl
+import numpy as np
+from numpy import arccos, arctan2 
 
 #Intersect class to define the distance of intersection
 class Intersect(object):
-    def __init__(self, intersectDistance,point,normal,sceneObject=None):
+    def __init__(self, intersectDistance,point,normal,sceneObject=None,texCoords=None):
 
         self.distance = intersectDistance
         self.point = point
         self.normal = normal
         self.sceneObject = sceneObject
+        self.texCoords=texCoords
 
 
 #Class Sphere to render a sphere object
@@ -72,5 +75,11 @@ class Sphere(object):
         point=self.mathGl.sumVector(origin,self.mathGl.scalarMultiplicationVector(direction,t0))
         normal=self.mathGl.subtractVector(point,self.center)
         normal=self.mathGl.normalizeVector(normal)
+
+
+        u = 1 - (arctan2( normal[2], normal[0]) / (2 * np.pi) + 0.5)
+        v =  arccos(-normal[1]) / np.pi
+
+        tCoords = [u, v]
         #Any other way there is an intersection with distance t0
-        return Intersect(intersectDistance = t0,point=point,normal=normal,sceneObject=self)
+        return Intersect(intersectDistance = t0,point=point,normal=normal,sceneObject=self,texCoords=tCoords)

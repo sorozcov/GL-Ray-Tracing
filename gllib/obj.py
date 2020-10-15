@@ -6,7 +6,11 @@
 # obj.py
 
 import struct
-
+import os,sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from gllib.mathgl import MathGl
+import numpy as np
+from numpy import arccos, arctan2 
 #color function ro return rgb in bytes
 def colorScale(r,g,b):
     return bytes([round(b*255),round(g*255),round(r*255)])
@@ -105,7 +109,7 @@ class Texture(object):
 
         textureFile.close()
 
-    def getTextureCoordinates(self, tx, ty):
+    def getColor(self, tx, ty):
         #tx and ty coords should be between 0 and 1
         if tx >= 0 and tx <= 1 and ty >= 0 and ty <= 1:
             #We transform to absolute texture coords
@@ -116,5 +120,42 @@ class Texture(object):
             #We return black
             return colorScale(0,0,0)
 
+# Class Envmap 
+class Envmap(object):
+    def __init__(self, filename):
+        self.filename = filename
+        self.mathGl = MathGl()
+        self.parseEnvmap()
+        
+    def parseEnvmap(self):
+        file = open(self.filename, 'rb')
+        file.seek(10)
+        headerSize = struct.unpack('=l', file.read(4))[0]
 
-      
+        file.seek(14 + 4)
+        self.width = struct.unpack('=l', file.read(4))[0]
+        self.height = struct.unpack('=l', file.read(4))[0]
+        file.seek(headerSize)
+
+        self.pixels = []
+
+        for y in range(self.height):
+            self.pixels.append([])
+            for x in range(self.width):
+                b = ord(file.read(1)) / 255
+                g = ord(file.read(1)) / 255
+                r = ord(file.read(1)) / 255
+                self.pixels[y].append(colorScale(r,g,b))
+
+        file.close()
+
+    def getColor(self, direction):
+        direction = self.mathGl.normalizeVector(direction)
+        x = int( (arctan2( direction[2], direction[0]) / (2 * np.pi) + 0.5) * self.width)
+        y = int( arccos(-direction[1]) / np.pi * self.height )
+        # tx=direction[0]
+        # ty=direction[1]
+        # x = int(tx * self.width)
+        # y = int(ty * self.height)
+        
+        return self.pixels[y][x]
